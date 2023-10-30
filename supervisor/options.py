@@ -184,6 +184,7 @@ class Options:
         env=...      -- if not None, name of environment variable that
                         overrides the configuration file or default
         """
+        # 当有 Flag 参数时，只要给了该参数，那么该参数的 key 对应的 value 一定是 flag 参数的值
         if flag is not None:
             if handler is not None:
                 raise ValueError("use at most one of flag= and handler=")
@@ -195,11 +196,13 @@ class Options:
                 raise ValueError("flag= requires a command line flag")
             handler = lambda arg, flag=flag: flag
 
+        # 检查了短参数和长参数是否包含值的状态是否一致
         if short and long:
             if short.endswith(":") != long.endswith("="):
                 raise ValueError("inconsistent short/long options: %r %r" % (
                     short, long))
 
+        # 解析短参数，检查后将短参数添加到 `Options.options_map` 字典和 `self.short_tptions` 列表中
         if short:
             if short[0] == "-":
                 raise ValueError("short option should not start with '-'")
@@ -212,6 +215,7 @@ class Options:
             self.options_map[key] = (name, handler)
             self.short_options.append(short)
 
+        # 解析长参数，检查后将长参数添加到 `Options.options_map` 字典和 `self.short_tptions` 列表中
         if long:
             if long[0] == "-":
                 raise ValueError("long option should not start with '-'")
@@ -224,6 +228,7 @@ class Options:
             self.options_map[key] = (name, handler)
             self.long_options.append(long)
 
+        # 如果 `env` 参数不为空，则将参数添加到 `Options.environ_map` 字典中
         if env:
             self.environ_map[env] = (name, handler)
 
@@ -453,6 +458,7 @@ class ServerOptions(Options):
         self.configroot = Dummy()
         self.configroot.supervisord = Dummy()
 
+        # 注册命令行参数
         self.add(None, None, "v", "version", self.version)
         self.add("nodaemon", "supervisord.nodaemon", "n", "nodaemon", flag=1,
                  default=0)
