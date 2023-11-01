@@ -92,6 +92,7 @@ class Options:
         Params:
         require_configfile -- whether we should fail on no config file.
         """
+        # 初始化 Options.add 中命令行参数相关的实例属性
         self.names_list = []  # 元素为添加到 `Options` 属性的名称和带 `.` 的名称的元组
         self.short_options = []  # 元素为所有短参数的名称
         self.long_options = []  # 元素为所有长参数的名称
@@ -99,15 +100,20 @@ class Options:
         self.default_map = {}  # 包含默认值参数的默认值字典。键为添加到 `Options` 属性的名称，值为默认值
         self.required_map = {}  # 设置了 required 的参数的字典。键为添加到 `Options` 属性的名称，值为 required 参数的值
         self.environ_map = {}  # 所有设置了 env 的参数。键为 env 名称，值为需要添加到 `Options` 的属性的名称和参数处理规则的元组
+
         self.attr_priorities = {}
         self.require_configfile = require_configfile
+
+        # 初始化 ServerOptions 和 ClientOptions 中通用的参数
         self.add(None, None, "h", "help", self.help)
         self.add(None, None, "?", None, self.help)
         self.add("configfile", None, "c:", "configuration=")
+
         self.parse_criticals = []
         self.parse_warnings = []
         self.parse_infos = []
 
+        # 生成所有可能包含 supervisor 配置文件 supervisord.conf 的路径
         here = os.path.dirname(os.path.dirname(sys.argv[0]))
         searchpaths = [os.path.join(here, 'etc', 'supervisord.conf'),
                        os.path.join(here, 'supervisord.conf'),
@@ -118,6 +124,7 @@ class Options:
                        ]
         self.searchpaths = searchpaths
 
+        # 读取当前环境变量，并添加到 self.environ_expansions 中
         self.environ_expansions = {}
         for k, v in os.environ.items():
             self.environ_expansions['ENV_%s' % k] = v
