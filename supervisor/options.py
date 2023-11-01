@@ -92,13 +92,13 @@ class Options:
         Params:
         require_configfile -- whether we should fail on no config file.
         """
-        self.names_list = []
-        self.short_options = []
-        self.long_options = []
-        self.options_map = {}
-        self.default_map = {}
-        self.required_map = {}
-        self.environ_map = {}
+        self.names_list = []  # 元素为添加到 `Options` 属性的名称和带 `.` 的名称的元组
+        self.short_options = []  # 元素为所有短参数的名称
+        self.long_options = []  # 元素为所有长参数的名称
+        self.options_map = {}  # 键为参数名（若参数同时包含短参数和长参数，则会添加两次），值为需要添加到 `Options` 的属性的名称和参数处理规则的元组
+        self.default_map = {}  # 包含默认值参数的默认值字典。键为添加到 `Options` 属性的名称，值为默认值
+        self.required_map = {}  # 设置了 required 的参数的字典。键为添加到 `Options` 属性的名称，值为 required 参数的值
+        self.environ_map = {}  # 所有设置了 env 的参数。键为 env 名称，值为需要添加到 `Options` 的属性的名称和参数处理规则的元组
         self.attr_priorities = {}
         self.require_configfile = require_configfile
         self.add(None, None, "h", "help", self.help)
@@ -233,11 +233,15 @@ class Options:
             self.environ_map[env] = (name, handler)
 
         if name:
+            # 将 `Options` 的 `name` 字段初始化为 None
             if not hasattr(self, name):
                 setattr(self, name, None)
+            # 将 `name` 和 `confname` 的元组添加到 `Options.names_list`
             self.names_list.append((name, confname))
+            # 若 `default` 不为空则更新 `Options.default_map` 字典
             if default is not None:
                 self.default_map[name] = default
+            # 若 `required` 不为空，则更新 `Options.required_map` 字典
             if required:
                 self.required_map[name] = required
 
