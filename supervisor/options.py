@@ -104,7 +104,7 @@ class Options:
         self.attr_priorities = {}
         self.require_configfile = require_configfile
 
-        # 初始化 ServerOptions 和 ClientOptions 中通用的参数
+        # 在 Options 中初始化 ServerOptions 和 ClientOptions 中通用的参数
         self.add(None, None, "h", "help", self.help)
         self.add(None, None, "?", None, self.help)
         self.add("configfile", None, "c:", "configuration=")
