@@ -101,10 +101,10 @@ class Options:
         self.required_map = {}  # 设置了 required 的参数的字典。键为添加到 `Options` 属性的名称，值为 required 参数的值
         self.environ_map = {}  # 所有设置了 env 的参数。键为 env 名称，值为需要添加到 `Options` 的属性的名称和参数处理规则的元组
 
-        self.attr_priorities = {}
+        self.attr_priorities = {}  # 存储每个 Options 的属性当前的优先级
         self.require_configfile = require_configfile
 
-        # 在 Options 中初始化 ServerOptions 和 ClientOptions 中通用的参数
+        # 在 Options 中初始化 ServerOptions 和 ClientOptions 中通用的命令行参数
         self.add(None, None, "h", "help", self.help)
         self.add(None, None, "?", None, self.help)
         self.add("configfile", None, "c:", "configuration=")
@@ -143,10 +143,7 @@ class Options:
         return config
 
     def help(self, dummy):
-        """Print a long help message to stdout and exit(0).
-
-        Occurrences of "%s" in are replaced by self.progname.
-        """
+        """打印详细的 help 信息，然后调用 `sys.exit(0)` 以正常退出码 0 退出程序。"""
         help = self.doc + "\n"
         if help.find("%s") > 0:
             help = help.replace("%s", self.progname)
@@ -154,7 +151,7 @@ class Options:
         self.exit(0)
 
     def usage(self, msg):
-        """Print a brief error message to stderr and exit(2)."""
+        """先向 `sys.stderr`（标准错误输出）写出错误信息，然后调用 `sys.exit(2)` 以异常退出码 2 退出程序"""
         self.stderr.write("Error: %s\n" % str(msg))
         self.stderr.write("For help, use %s -h\n" % self.progname)
         self.exit(2)
@@ -170,7 +167,7 @@ class Options:
             flag=None,                  # if not None, flag value
             env=None,                   # if not None, environment variable
             ):
-        """Add information about a configuration option.
+        """注册允许设置的命令行参数
 
         This can take several forms:
 
@@ -253,6 +250,7 @@ class Options:
                 self.required_map[name] = required
 
     def _set(self, attr, value, prio):
+        """若参数 `attr` 当前优先级小于 `prio`， 则将 `value` 添加到 `Options` 的 `attr` 属性中"""
         current = self.attr_priorities.get(attr, -1)
         if prio >= current:
             setattr(self, attr, value)
@@ -270,9 +268,9 @@ class Options:
         """
         # Provide dynamic default method arguments
         if args is None:
-            args = sys.argv[1:]
+            args = sys.argv[1:]  # 读取执行 Python 脚本的命令行参数
         if progname is None:
-            progname = sys.argv[0]
+            progname = sys.argv[0]  # 执行的 Python 脚本名称
         if doc is None:
             try:
                 import __main__
@@ -282,28 +280,31 @@ class Options:
         self.progname = progname
         self.doc = doc
 
-        self.options = []
-        self.args = []
+        self.options = []  # 键值对类型（或只有键没有值）的命令行参数的键值对元组的列表
+        self.args = []  # 没有键只有值的命令行参数（位置参数）的列表
 
-        # Call getopt
+        # 使用 getopt 将命令行参数解析为键值对类型和只有键的类型，并分别存入 self.options 和 self.args
         try:
             self.options, self.args = getopt.getopt(
                 args, "".join(self.short_options), self.long_options)
         except getopt.error as exc:
             self.usage(str(exc))
 
-        # Check for positional args
+        # 检查是否允许位置参数（Supervisor 服务端不允许，Supervisor 客户端允许），如果不允许的话则抛出异常结束程序
         if self.args and not self.positional_args_allowed:
             self.usage("positional arguments are not supported: %s" % (str(self.args)))
 
-        # Process options returned by getopt
+        # 处理 getopt 解析的命令行参数
         for opt, arg in self.options:
+            # 从 `Options.options_map` 中读取参数对应的添加到 `Options` 中的属性名和预处理函数
             name, handler = self.options_map[opt]
+            # 如果设置了参数预处理逻辑，则执行该预处理逻辑或检查逻辑
             if handler is not None:
                 try:
                     arg = handler(arg)
                 except ValueError as msg:
                     self.usage("invalid value for %s %r: %s" % (opt, arg, msg))
+            # 如果命令行参数没有被重复设置，则调用 `_set` 方法将该命令行参数添加到 `Options` 的对象属性中
             if name and arg is not None:
                 if getattr(self, name) is not None:
                     self.usage("conflicting command line option %r" % opt)
