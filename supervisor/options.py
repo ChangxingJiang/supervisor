@@ -310,17 +310,21 @@ class Options:
                     self.usage("conflicting command line option %r" % opt)
                 self._set(name, arg, 2)
 
-        # Process environment variables
+        # 处理需要读取的环境变量
         for envvar in self.environ_map.keys():
+            # 从 `Options.environ_map` 中读取环境变量对应的添加到 `Options` 中的属性名和预处理函数
             name, handler = self.environ_map[envvar]
             if envvar in os.environ:
+                # 从环境变量中读取对应的变量值
                 value = os.environ[envvar]
+                # 如果设置了参数预处理逻辑，则执行该预处理逻辑或检查逻辑
                 if handler is not None:
                     try:
                         value = handler(value)
                     except ValueError as msg:
                         self.usage("invalid environment value for %s %r: %s"
                                    % (envvar, value, msg))
+                # 调用 `_set` 方法将该命令行参数添加到 `Options` 的对象属性中
                 if name and value is not None:
                     self._set(name, value, 1)
 
@@ -334,11 +338,11 @@ class Options:
 
         This includes reading config file if necessary, setting defaults etc.
         """
+        # 读取 Supervisor 的配置文件
         if self.configfile:
             self.process_config_file(do_usage)
 
-        # Copy config options to attributes of self.  This only fills
-        # in options that aren't already set from the command line.
+        # 将配置文件中的配置信息以优先级 0 添加到 Options 的属性中（即如果已被命令行或环境变量配置，则不再配置）
         for name, confname in self.names_list:
             if confname:
                 parts = confname.split(".")
@@ -348,14 +352,15 @@ class Options:
                         break
                     # Here AttributeError is not a user error!
                     obj = getattr(obj, part)
+                # 调用 `_set` 方法将该命令行参数添加到 `Options` 的对象属性中
                 self._set(name, obj, 0)
 
-        # Process defaults
+        # 处理默认值：如果有默认值的变量当前仍为 None，则置为默认值
         for name, value in self.default_map.items():
             if getattr(self, name) is None:
                 setattr(self, name, value)
 
-        # Process required options
+        # 处理必须设置的参数：如果有必须设置的参数当前仍未 None，则抛出异常并退出
         for name, message in self.required_map.items():
             if getattr(self, name) is None:
                 self.usage(message)
