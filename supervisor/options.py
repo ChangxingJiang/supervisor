@@ -130,12 +130,15 @@ class Options:
             self.environ_expansions['ENV_%s' % k] = v
 
     def default_configfile(self):
-        """Return the name of the found config file or print usage/exit."""
+        """返回找到的文件文件名称，如果没有找到（且配置文件必需）则打印异常信息并退出程序"""
+        # 按顺序遍历所有可能存在配置文件的默认路径，只要找到配置文件就不再检查其他路径
         config = None
         for path in self.searchpaths:
             if os.path.exists(path):
                 config = path
                 break
+
+        # 如果没有找到配置文件，且为 Supervisor 服务端（配置文件必须），则打印日常信息并退出程序
         if config is None and self.require_configfile:
             self.usage('No config file found at default paths (%s); '
                        'use the -c option to specify a config file '
@@ -328,17 +331,19 @@ class Options:
                 if name and value is not None:
                     self._set(name, value, 1)
 
+        # 没有使用命令行参数设置配置文件地址，则会调用了 `default_configfile()` 方法查找默认路径中是否存在配置文件
         if self.configfile is None:
             self.configfile = self.default_configfile()
 
+        # 处理配置数据结构：包括读取配置文件（如果必须）、配置默认值、检查必须值
         self.process_config()
 
     def process_config(self, do_usage=True):
-        """Process configuration data structure.
+        """处理配置数据结构
 
-        This includes reading config file if necessary, setting defaults etc.
+        包括读取配置文件（如果必须）、配置默认值、检查必须值。
         """
-        # 读取 Supervisor 的配置文件
+        # 读取并解析 Supervisor 的配置文件
         if self.configfile:
             self.process_config_file(do_usage)
 
@@ -366,6 +371,7 @@ class Options:
                 self.usage(message)
 
     def process_config_file(self, do_usage):
+        """处理配置文件"""
         # Process config file
         if not hasattr(self.configfile, 'read'):
             self.here = os.path.abspath(os.path.dirname(self.configfile))
