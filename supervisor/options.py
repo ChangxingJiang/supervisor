@@ -371,7 +371,7 @@ class Options:
                 self.usage(message)
 
     def process_config_file(self, do_usage):
-        """处理配置文件"""
+        """调用 `Options.read_config()` 方法处理配置文件，在当前方法中实现了读取、解析配置文件的异常捕获逻辑"""
         # Process config file
         if not hasattr(self.configfile, 'read'):
             self.here = os.path.abspath(os.path.dirname(self.configfile))
@@ -620,6 +620,8 @@ class ServerOptions(Options):
         self.parse_infos = []
 
         section = self.configroot.supervisord
+
+        # 如果提供的是文件路径，则打开文件获取文本流。如果文件路径不存在或打开文本遇到问题（例如编码无法解析等），则打印异常并退出程序
         need_close = False
         if not hasattr(fp, 'read'):
             if not self.exists(fp):
@@ -630,6 +632,7 @@ class ServerOptions(Options):
             except (IOError, OSError):
                 raise ValueError("could not read config file %s" % fp)
 
+        # 使用继承自 `ConfigParser.RawConfigParser` 的 `UnhosedConfigParser` 类来解析配置文件
         parser = UnhosedConfigParser()
         parser.expansions = self.environ_expansions
         try:
@@ -640,6 +643,7 @@ class ServerOptions(Options):
         except ConfigParser.ParsingError as why:
             raise ValueError(str(why))
         finally:
+            # 如果之前打开了文件，则将文件关闭
             if need_close:
                 fp.close()
 
