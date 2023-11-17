@@ -632,7 +632,7 @@ class ServerOptions(Options):
             except (IOError, OSError):
                 raise ValueError("could not read config file %s" % fp)
 
-        # 使用继承自 `ConfigParser.RawConfigParser` 的 `UnhosedConfigParser` 类来解析配置文件
+        # 使用继承自 `configParser.RawConfigParser` 的 `UnhosedConfigParser` 类来解析配置文件
         parser = UnhosedConfigParser()
         parser.expansions = self.environ_expansions
         try:

@@ -1,3 +1,7 @@
+"""
+兼容 Python 2 和 Python 3 的处理逻辑
+"""
+
 from __future__ import absolute_import
 
 import sys
