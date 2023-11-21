@@ -422,26 +422,30 @@ class Options:
         return import_spec(spec)
 
     def read_include_config(self, fp, parser, expansions):
+        """先根据主配置文件找到所有子配置文件，然后逐个解析子配置文件"""
         if parser.has_section('include'):
-            parser.expand_here(self.here)
+            # 从主配置文件中解析出子配置文件所在路径及所有文件名的 pattern
+            parser.expand_here(self.here)  # 将所有配置文件中的 %(here)s 通配符替换为启动路径
             if not parser.has_option('include', 'files'):
                 raise ValueError(".ini file has [include] section, but no "
                 "files setting")
-            files = parser.get('include', 'files')
-            files = expand(files, expansions, 'include.files')
-            files = files.split()
+            files = parser.get('include', 'files')  # 获取 include.files 配置项
+            files = expand(files, expansions, 'include.files')  # 使用基础环境变量字典 `expansions` 补全字符串中的通配符
+            files = files.split()  # 分割不同的变量名
             if hasattr(fp, 'name'):
-                base = os.path.dirname(os.path.abspath(fp.name))
+                base = os.path.dirname(os.path.abspath(fp.name))  # 获取主配置文件所在路径
             else:
                 base = '.'
+
+            # 逐个 pattern 查找对应的配置文件，并逐个配置文件进行解析
             for pattern in files:
-                pattern = os.path.join(base, pattern)
-                filenames = glob.glob(pattern)
+                pattern = os.path.join(base, pattern)  # 根据子配置文件所在路径和文件名 pattern 构造路径
+                filenames = glob.glob(pattern)  # 获取返回满足 pattern 路径的所有文件名
                 if not filenames:
                     self.parse_warnings.append(
                         'No file matches via include "%s"' % pattern)
                     continue
-                for filename in sorted(filenames):
+                for filename in sorted(filenames):  # 逐个读取并解析子配置文件
                     self.parse_infos.append(
                         'Included extra file "%s" during parsing' % filename)
                     try:
@@ -647,11 +651,13 @@ class ServerOptions(Options):
             if need_close:
                 fp.close()
 
-        host_node_name = platform.node()
+        # 构造环境变量字典，用于后续添加到字符串中
+        host_node_name = platform.node()  # 读取计算机的网络名称
         expansions = {'here':self.here,
                       'host_node_name':host_node_name}
         expansions.update(self.environ_expansions)
 
+        # 读取 include 配置段中包含的其他子配置文件
         self.read_include_config(fp, parser, expansions)
 
         sections = parser.sections()
@@ -1858,6 +1864,7 @@ class UnhosedConfigParser(ConfigParser.RawConfigParser):
                             expansions=expansions, **kwargs)
 
     def expand_here(self, here):
+        """将所有配置文件中的 %(here)s 通配符替换为启动路径"""
         HERE_FORMAT = '%(here)s'
         for section in self.sections():
             for key, value in self.items(section):
