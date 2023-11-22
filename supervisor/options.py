@@ -1807,7 +1807,7 @@ class UnhosedConfigParser(ConfigParser.RawConfigParser):
 
         ConfigParser.RawConfigParser.__init__(self, *args, **kwargs)
 
-        self.section_to_file = {}
+        self.section_to_file = {}  # 用于存储 section 的配置来自哪个文件
         self.expansions = {}
 
     def read_string(self, string, source='<string>'):
